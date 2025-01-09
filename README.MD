@@ -49,7 +49,7 @@ The-Mastermind-Game/
 │   ├── genetic_agent.html         # Genetic algorithm page
 │   ├── q_learning_agent.html      # Q-Learning solver page
 ├── app.py                         # Flask application
-├── config.py                      # Configurable parameters for solvers and gameplay
+├── config.py                      # Configurable parameters for solvers
 ├── solvers_factory.py             # Factory for creating solvers
 ```
 
@@ -68,7 +68,7 @@ cd The-Mastermind-Game
 python app.py
 ```
 
-### 4. Open in Browser
+### 3. Open in Browser
 Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) to start your game.
 
 ---
