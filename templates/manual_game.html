@@ -1,0 +1,374 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mastermind - Manual Game</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #f8f1e5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .game-container {
+            background-color: #4a3b38;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 350px;
+            text-align: center;
+            height: 95vh; /* Adjusted height */
+            overflow: hidden; /* Prevents unnecessary scrolling */
+        }
+
+        h1 {
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .color-options {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 10px; /* Reduced spacing */
+        }
+
+        .color-circle {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .color-circle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        }
+
+        .board {
+            display: flex;
+            flex-direction: column;
+            gap: 5px; /* Reduced spacing */
+            margin-bottom: 10px;
+        }
+
+        .board-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+            gap: 5px;
+            margin-bottom: 5px; /* Reduce space between rows */
+        }
+
+        .guess-row {
+            display: flex;
+            gap: 5px; /* Reduce space between guess circles */
+        }
+
+        .feedback-row {
+            display: flex;
+            gap: 3px; /* Reduce space between feedback circles */
+            margin-left: 12px; /* Move feedback closer to guesses */
+        }
+
+        .circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color:  rgba(195, 178, 144, 0.86);
+        }
+
+        .feedback-circle {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color:  rgba(195, 178, 144, 0.86);
+        }
+
+        .submit-btn {
+            margin-top: 10px;
+            width: 100%;
+            background-color: rgba(195, 178, 144, 0.86);
+            border: none;
+            color: white;
+            padding: 10px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease;
+            position: relative; /* Required for transform */
+            right: 10px; /* Moves the button 20px to the right */
+        }
+
+
+        .submit-btn:disabled {
+            background-color: rgba(195, 178, 144, 0.86);
+            cursor: not-allowed;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background-color: rgba(195, 178, 144, 0.86);
+            transform: scale(1.05);
+        }
+
+        /* Modal Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #4a3b38;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 15px;
+            width: 50%;
+            color: white;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        .modal-content button {
+            background-color: rgba(195, 178, 144, 0.86);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 10px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-content button:hover {
+            background-color: #8b5e5a;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <h1>Mastermind</h1>
+    <div class="color-options" id="color-options">
+        <!-- Color buttons will be dynamically added -->
+    </div>
+    <div id="board" class="board">
+        <!-- Rows will be dynamically generated -->
+    </div>
+    <button id="submit-guess" class="submit-btn" disabled>Submit Guess</button>
+</div>
+
+<!-- Win/Lose Modal -->
+<div id="endGameModal" class="modal">
+    <div class="modal-content">
+        <h2 id="endGameMessage"></h2>
+        <button onclick="goBackToMenu()">Back to Menu</button>
+    </div>
+</div>
+
+
+<script>
+    let selectedColors = [];
+    let currentRow = 0;
+    let numColors = 6; // Default number of colors
+    let secretCode = []; // Declare globally
+    const codeLength = 4; // Fixed length
+
+    async function initializeGame() {
+        const urlParams = new URLSearchParams(window.location.search);
+        numColors = parseInt(urlParams.get("num_colors") || "6");
+
+        try {
+            const response = await fetch('/start_game', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({num_colors: numColors, code_length: codeLength})
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log("Game initialized:", result);
+
+            secretCode = result.secret_code; // Store the secret code
+            console.log("Secret Code:", secretCode);
+
+            generateColorOptions();
+            initializeBoard();
+        } catch (error) {
+            console.error("Error initializing game:", error);
+            alert("Failed to initialize the game. Please try again.");
+        }
+    }
+
+    function generateColorOptions() {
+        const colorOptionsContainer = document.getElementById("color-options");
+        colorOptionsContainer.innerHTML = ""; // Clear previous options
+
+        const colors = ["red", "blue", "green", "yellow", "purple", "orange", "brown", "pink", "cyan", "lime"];
+        const distinctColors = colors.slice(0, numColors); // Ensure unique colors
+        distinctColors.forEach((color, index) => {
+            const colorCircle = document.createElement("div");
+            colorCircle.className = "color-circle";
+            colorCircle.style.backgroundColor = color;
+            colorCircle.addEventListener("click", () => selectColor(index));
+            colorOptionsContainer.appendChild(colorCircle);
+        });
+    }
+
+    function initializeBoard() {
+        const board = document.getElementById("board");
+        board.innerHTML = "";
+
+        for (let i = 0; i < 10; i++) {
+            const boardRow = document.createElement("div");
+            boardRow.className = "board-row";
+
+            const guessRow = document.createElement("div");
+            guessRow.className = "guess-row";
+            for (let j = 0; j < codeLength; j++) {
+                const circle = document.createElement("div");
+                circle.className = "circle";
+                guessRow.appendChild(circle);
+            }
+
+            const feedbackRow = document.createElement("div");
+            feedbackRow.className = "feedback-row";
+            for (let j = 0; j < codeLength; j++) {
+                const feedbackCircle = document.createElement("div");
+                feedbackCircle.className = "feedback-circle";
+                feedbackRow.appendChild(feedbackCircle);
+            }
+
+            boardRow.appendChild(guessRow);
+            boardRow.appendChild(feedbackRow);
+            board.appendChild(boardRow);
+        }
+    }
+
+    function selectColor(index) {
+        if (selectedColors.length < codeLength) {
+            selectedColors.push(index);
+            updateRow();
+
+            if (selectedColors.length === codeLength) {
+                document.getElementById("submit-guess").disabled = false;
+            }
+        }
+    }
+
+    function updateRow() {
+        const guessRow = document.getElementById("board").children[currentRow].querySelector(".guess-row");
+        const guessCircles = guessRow.querySelectorAll(".circle");
+
+        const colors = ["red", "blue", "green", "yellow", "purple", "orange", "brown", "pink", "cyan", "lime"];
+        selectedColors.forEach((colorIndex, idx) => {
+            guessCircles[idx].style.backgroundColor = colors[colorIndex];
+        });
+    }
+
+    document.getElementById("submit-guess").addEventListener("click", async () => {
+        try {
+            console.log("Submitting guess:", selectedColors);
+            const response = await fetch('/make_guess', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({guess: selectedColors})
+            });
+
+            if (!response.ok) {
+                console.error("Error in response:", response.status, response.statusText);
+                throw new Error(`HTTP error: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log("Response received:", result);
+
+            if (result.error) {
+                console.error("Backend returned error:", result.error);
+                alert(result.error);
+            } else {
+                updateFeedback(result.feedback);
+
+                if (result.message) {
+                    // Show the winning modal if the user wins
+                    console.log("Winning condition met.");
+                    showEndGameModal(result.message);
+                } else if (currentRow === 9) { // Check if this is the last attempt
+                    console.log("Losing condition met.");
+                    showEndGameModal("You lost! The correct code was: " + secretCode.join(", "));
+                } else {
+                    // Proceed to the next row
+                    console.log("Proceeding to next row.");
+                    currentRow++;
+                    selectedColors = []; // Clear selected colors for the next row
+                    document.getElementById("submit-guess").disabled = true;
+                }
+            }
+        } catch (error) {
+            console.error("Error during guess submission:", error);
+            alert("An error occurred. Please try again.");
+        }
+    });
+
+    function updateFeedback(feedback) {
+        const feedbackRow = document.getElementById("board").children[currentRow].querySelector(".feedback-row");
+        const feedbackCircles = feedbackRow.querySelectorAll(".feedback-circle");
+
+        // Reset feedback circles to default color
+        feedbackCircles.forEach(circle => {
+            circle.style.backgroundColor =  "rgba(195, 178, 144, 0.86)"; // Default gray
+        });
+
+        // Apply feedback
+        for (let i = 0; i < feedback[0]; i++) {
+            feedbackCircles[i].style.backgroundColor = "black";
+        }
+        for (let i = 0; i < feedback[1]; i++) {
+            feedbackCircles[feedback[0] + i].style.backgroundColor = "white";
+        }
+    }
+
+   function showEndGameModal(message) {
+    const modal = document.getElementById("endGameModal");
+    const modalMessage = document.getElementById("endGameMessage");
+
+    // Set the message and display the modal
+    modalMessage.innerText = message;
+    modal.style.display = "flex"; // Use flex to center the modal
+    modal.style.zIndex = "1000"; // Ensure it appears above all other content
+    console.log("Modal displayed with message:", message);
+}
+
+
+    function goBackToMenu() {
+        window.location.href = "/";
+    }
+
+
+    initializeGame();
+</script>
+</body>
+</html>

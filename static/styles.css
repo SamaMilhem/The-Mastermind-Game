@@ -1,0 +1,65 @@
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Allow scrolling if content overflows */
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #4a3b38;
+    margin: 5% auto; /* Center the modal vertically */
+    padding: 20px;
+    border-radius: 15px;
+    width: 50%;
+    max-height: 80%; /* Limit modal height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    color: white;
+    text-align: left;
+    font-size: 1.2rem;
+    line-height: 1.8;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f1e5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background-color: #4a3b38;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    width: 400px;
+}
+
+h1 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+button {
+    background-color: #6c4f4d;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    margin: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+button:hover {
+    background-color: #8b5e5a;
+}
